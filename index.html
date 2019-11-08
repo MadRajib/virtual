@@ -1,0 +1,480 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="keywords" content="Virutal Painting,Professional House Painting Service House painting,virtual house painting, yespainter, virtual">
+  <title>Virtual Painting | Professional House Painting Service | Let's Paint Homes, Beautiful !</title>
+  <meta name="description" content="We take the pain out of painting with Online booking, Quality service and Best market price. 100% satisfaction guarantee!">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="shortcut icon" href="https://yespainter.com/wp-content/uploads/2017/04/logo_v.png" type="image/x-icon">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.11/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.11/addons/p5.dom.min.js"></script>
+
+  <script language="javascript" type="text/javascript" src="libraries/jscolor.js"></script>
+  <!-- uncomment lines below to include extra p5 libraries -->
+  <!--<script language="javascript" src="libraries/p5.dom.js"></script>-->
+  <!--<script language="javascript" src="libraries/p5.sound.js"></script>-->
+  <script language="javascript" type="text/javascript" src="sketch.js"></script>
+  <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/w3.css">
+
+
+ <script language="javascript" type="text/javascript">
+
+ //var imageLoader = document.getElementById('image');
+ //console.log(imageLoader);
+ //imageLoader.addEventListener('change', handleImage, false);
+var stepDes = ["Click Choose Image Button. <br>Choose Image from Our Gallary or Upload a Image. ","Click on the Image to draw points to make the area you want to paint.<br>click on Undo button or Ctrl+z to Undo.","Click on Finish Selection Button after you have finished marking the area to paint.<br>pro-tip: system will automatically connect last and first point when you click the button.<br>You may click the button after selecting four corners of a wall.","Drag Colour pallets to the Selected areas to fill Colours.<br>pro-tip: Use pointers on the color wheel to change colour.","Click On Save Image button to save the painting.<br>You may share this image now.","Let's Paint Homes, Beautiful!"];
+var stepName = ["Select Image","Choose Wall","Finish Selection","Adding Colours","Saving Image","Awesome!"];
+var rectPos = [new posBody(165,55,"86.046511628%","0%"),new posBody(0,0,"86.046511628%",0),new posBody(175,55,"40.310077519%",0),new posBody("30%","470px","1.162790698%",70),new posBody(150,55,"10.852713178%",570),new posBody(0,0,0,0)];
+
+var currentStep = 0;
+function handleImage(e){
+var reader = new FileReader();
+reader.onload = function(event){
+   var img = new Image();
+   img.onload = function(){
+       loadPic(img.src);
+       console.log(img.src);
+
+   }
+   img.src = event.target.result;
+}
+reader.readAsDataURL(e.target.files[0]);
+}
+
+
+      //drag the color to canvas
+      function drag(ev,elem) {
+        //console.log(elem.style.backgroundColor);
+        ev.dataTransfer.setData("color", elem.style.backgroundColor);
+      }
+
+      function drop(ev) {
+        ev.preventDefault();
+        var data = ev.dataTransfer.getData("color");
+        //console.log(data+":"+getMouseCoordinates());
+        applyColorF(data);
+      }
+
+      function allowDrop(ev) {
+        ev.preventDefault();
+      }
+
+
+      function loadPic(src){
+        var x = document.getElementById('imageGallary');
+        x.style.display = 'none';
+        //var button1 = document.getElementById('button1');
+        //var button2 = document.getElementById('button2');
+        //var button3 = document.getElementById('button3');
+        //var button4 = document.getElementById('button4');
+        //var button6 = document.getElementById('button6');
+        //var button7 = document.getElementById('button7');
+
+        //button1.style.visibility ='visible';
+        //button2.style.visibility ='visible';
+        //button3.style.visibility ='visible';
+        //button4.style.visibility ='visible';
+        //button6.style.visibility ='visible';
+        //button7.style.visibility ='visible';
+        loadIm(src);
+        galleryFlag = false;
+        setImagePicker(true);
+
+      }
+
+      function chooseImage(){
+
+        var x = document.getElementById('imageGallary');
+
+        x.style.display = 'inline-block';
+        //var button1 = document.getElementById('button1');
+        //var button2 = document.getElementById('button2');
+        //var button3 = document.getElementById('button3');
+        //var button4 = document.getElementById('button4');
+        //var button6 = document.getElementById('button6');
+        //var button7 = document.getElementById('button7');
+
+        //button1.style.visibility ='collapse';
+        //button2.style.visibility ='collapse';
+        //button3.style.visibility ='collapse';
+        //button4.style.visibility ='collapse';
+        //button6.style.visibility ='collapse';
+        //button7.style.visibility ='collapse';
+        galleryFlag = true;
+
+      }
+
+      function saveImage(){
+        savecanvas();
+      }
+      function undo(){
+        pathUndo();
+      }
+
+      function next(){
+
+        console.log(currentStep);
+        var name = document.getElementById('stepName');
+        var des = document.getElementById('model-des');
+        var stepNo = document.getElementById('step_no');
+        var pos = document.getElementById('tutorial-overlay');
+        currentStep++;
+        currentStep = constrain(currentStep,0,stepName.length-1);
+
+        if(currentStep ==stepName.length-1){
+          stepNo.style.visibility="hidden";
+          name.innerHTML=stepName[currentStep];
+          des.innerHTML=stepDes[currentStep];
+          document.getElementById('nextButton').style.display="none";
+          document.getElementById('previousButton').style.display="none";
+          document.getElementById('finishButton').style.display="inline-block";
+        }else{
+            stepNo.innerHTML ="Step "+(currentStep+1)+" :&nbsp";
+            name.innerHTML=stepName[currentStep];
+            des.innerHTML=stepDes[currentStep];
+            console.log(typeof(currentStep));
+            var rect = rectPos[currentStep];
+            console.log(rect);
+            //pos.style.width =rect.width;
+            //pos.style.height =rect.height;
+            //pos.style.left =rect.left;
+          //  pos.style.top =rect.top;
+        }
+
+
+
+      }
+
+      function previous(){
+        document.getElementById('nextButton').style.backgroundColor="#330E2D";
+        document.getElementById('nextButton').style.color="white";
+
+        var name = document.getElementById('stepName');
+        var des = document.getElementById('model-des');
+        var stepNo = document.getElementById('step_no');
+        var pos = document.getElementById('tutorial-overlay');
+
+        --currentStep;
+
+        currentStep = constrain(currentStep,0,stepName.length-1);
+
+        stepNo.innerHTML ="Step "+(currentStep+1)+" :";
+        stepNo.style.visibility="visible";
+        name.innerHTML=stepName[currentStep];
+        des.innerHTML=stepDes[currentStep];
+        console.log(typeof(currentStep));
+        var rect = rectPos[currentStep];
+        console.log(rect);
+      //  pos.style.width =rect.width;
+      //  pos.style.height =rect.height;
+      //  pos.style.left =rect.left;
+      //  pos.style.top =rect.top;
+
+      }
+
+      function resetModel(){
+        var name = document.getElementById('stepName');
+        var des = document.getElementById('model-des');
+        var stepNo = document.getElementById('step_no');
+
+        currentStep =0;
+
+        currentStep = constrain(currentStep,0,stepName.length-1);
+        stepNo.innerHTML ="Step "+(currentStep+1)+" :&nbsp";
+
+        name.innerHTML=stepName[currentStep];
+        des.innerHTML=stepDes[currentStep];
+
+      }
+      function posBody(w,h,l,t){
+       this.width = w;
+       this.height = h;
+       this.left = l;
+       this.top = t;
+
+      }
+
+      //l:86.046511628%;t:0%; -->chooseImage
+	</script>
+
+</head>
+
+<body>
+
+<div class="w3-container" style="background-color:#094F71;">
+  <div style="float:left;width=10%">
+    <a target="_blank" href="https://yespainter.com">
+      <img src="assets/LOGOfinal.png"  width="150" height="60" alt="Yes Painter Mobile Logo">
+    </a>
+  </div>
+
+  <div style="text-align:right;">
+
+    <!--<button id="button1" class="button button1" onclick="selectAreaF()">Select Area</button>-->
+
+
+    <i id="myBtn" data-toggle="tooltip" title="See Tutorial" class="fa fa-question-circle-o tuto" style="font-size:20px;color:yellow"></i>
+    <button id="button2" class="button button2" onclick="finishSelectionF()">Finish Selection</button>
+    <button id="button3" class="button button3" onclick="showHideSelectedAreaF()">Show/Hide Selection</button>
+    <button id="button7" class="button button7" onclick="undo()">Undo</button>
+    <button id="button4" class="button button4" onclick="reset()">Reset</button>
+    <button id="button5" class="button button5" onclick="chooseImage()">Choose Image</button>
+
+
+  </div>
+</div>
+
+<div class="w3-row-padding">
+
+  <!-- The Modal -->
+  <div id="myModal" class="modal">
+
+    <div id="myModal" class=" modal-content">
+      <span class="close">&times;</span>
+      <h2 id="step_no" style="float:left">Step 1 :&nbsp</h2><h2 id="stepName">Selecting Image</h2>
+      <p id="model-des">"Click Choose Image Button. <br>Choose Image from Our Gallary or Upload a Image. </p>
+      <div class="btn-group" style="text-align:center">
+        <button id="previousButton" class="button">Previous</button>
+        <button id="nextButton" class="button" onclick="next()">Next</button>
+        <button id="finishButton" class="button" style="display:none;" onclick="next()">Finish</button>
+
+      </div>
+    </div>
+
+  </div>
+  <div id="tutorial-overlay" style="display: block; width: 100%; height: 56px; top: 0; left: 0; overflow:hidden"></div>
+
+  <div class="w3-third" style="border: 4px solid white;padding-top:10px;height:608px">
+
+
+    <div class="rule-box">
+        <div class="dropdown">
+            <button class="dropbtn"><h4>Colour Combinations</h4></button>
+            <div class="dropdown-content">
+              <ul id="rules">
+                  <li data-type="1" class="active">Analogous</li>
+                  <li data-type="2">Monochromatic</li>
+                  <li data-type="3">Triad</li>
+                  <li data-type="4">Complementary</li>
+                  <li data-type="5">Custom</li>
+              </ul>
+            </div>
+          </div>
+
+    </div>
+    <!-- picker canvas -->
+    <div class="canvas">
+        <canvas id="picker"></canvas>
+    </div>
+
+    <!-- samples -->
+    <div class="samples">
+        <div class="col" data-sample="3">
+            <div class="sample" draggable="true" ondragstart="drag(event,this)"></div>
+            <!--<div class="input-group">
+                <span>RGB</span>
+                <input type="text" maxlength="3" class="rgb r">
+                <input type="text" maxlength="3" class="rgb g">
+                <input type="text" maxlength="3" class="rgb b">
+            </div>
+          -->
+            <div class="input-group">
+                <!--<span>HEX</span>-->
+                <input type="text" class="hex">
+            </div>
+        </div>
+        <div class="col" data-sample="1">
+            <div class="sample" draggable="true" ondragstart="drag(event,this)"></div>
+
+            <div class="input-group">
+
+                <input type="text" class="hex">
+            </div>
+        </div>
+        <div class="col selected" data-sample="0">
+            <div class="sample" draggable="true" ondragstart="drag(event,this)"></div>
+
+            <div class="input-group">
+
+                <input type="text" class="hex">
+            </div>
+        </div>
+        <div class="col" data-sample="2">
+            <div class="sample" draggable="true" ondragstart="drag(event,this)"></div>
+
+            <div class="input-group">
+
+                <input type="text" class="hex">
+            </div>
+        </div>
+        <div class="col" data-sample="4">
+            <div class="sample" draggable="true" ondragstart="drag(event,this)"></div>
+
+            <div class="input-group">
+
+                <input type="text" class="hex">
+            </div>
+        </div>
+
+
+    </div>
+    <!-- scripts -->
+
+
+    <script src="js/index.js"></script>
+  <div style="text-align:center;padding-top:50px;position:relative">
+    <button id="button6" class="button button6" onclick="saveImage()">Save Image</button>
+  </div>
+
+
+  </div>
+
+  <div class="w3-rest " style="border: 4px solid white" ondrop="drop(event)" ondragover="allowDrop(event)">
+    <div id="sketch-holder">
+    </div>
+
+    <div id="imageGallary" class="galleryContainer" >
+
+        <h2 class="w3-myfont">Choose From our Image Gallery Or Upload Your Own</h2>
+        <div>
+            <input type="file" id="imageLoader" name="imageLoader" onchange="handleImage(event)" class="button button5"/>
+        </div>
+
+
+        <div class="imageContainer">
+
+          <div class="w3-row">
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic2.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic3.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic4.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic5.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="w3-row">
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic6.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic7.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic8.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic9.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="w3-row">
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic10.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic11.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic12.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+            <div class="responsive">
+              <div class="gallery">
+                  <img src="assets/pic13.jpg" onclick="loadPic(this.src)" alt="Bed Room" width="600" height="400">
+                  <div class="desc w3-myfont"></div>
+              </div>
+            </div>
+
+          </div>
+
+
+        </div>
+
+    </div>
+
+  </div>
+
+  <footer id="footer" class="fusion-footer-copyright-area">
+    <div class="fusion-row">
+      <div class="fusion-copyright-content">
+        <div class="fusion-copyright-notice" style="padding-bottom: 0px;">
+          <div>
+            <span style="line-height:30px !important;">© Copyright 2016 -
+              <script>document.write(new Date().getFullYear());</script>
+              |&nbsp;&nbsp;&nbsp;Crafted with Love by <a href="https://yespainter.com" target="_blank">Yes Painter</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;All Rights Reserved&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;
+            </span>
+
+            <span style="float:right;color:#ffffff">
+              <i class="fa fa-phone"></i>
+              &nbsp;<a href="tel:8884714777">888-4714-777</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              <i class="fa fa-envelope"></i>
+              <a href="mailto:care@yespainter.com" style="color:#ffffff;text-transform:uppercase;">Email Us</a>
+            </span>
+          -
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+
+</html>
